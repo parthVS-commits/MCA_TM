@@ -4,3 +4,4 @@ pinecone
 python-dotenv
 doublemetaphone
 pycountry
+googletrans
