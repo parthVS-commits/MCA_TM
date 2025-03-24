@@ -5,3 +5,4 @@ python-dotenv
 doublemetaphone
 pycountry
 googletrans
+better_profanity
