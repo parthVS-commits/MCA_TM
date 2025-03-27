@@ -565,7 +565,7 @@ def validate_suggestions(suggestions, indexes, similarity_threshold=0.9):
 def suggest_similar_names(wordmark):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
