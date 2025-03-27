@@ -496,7 +496,7 @@ def check_multiple_phonetic_matches(wordmark, index, model="text-embedding-3-sma
 def suggest_similar_names(wordmark):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
