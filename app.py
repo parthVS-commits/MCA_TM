@@ -691,7 +691,7 @@ def classify_objective_gpt4(objective: str):
     """
 
     gpt_response = openai.ChatCompletion.create(
-        model="gpt-4-turbo",
+        model="gpt-4o-mini",
         messages=[{"role": "system", "content": "You are a trademark classification assistant."},
                   {"role": "user", "content": prompt}]
     )
