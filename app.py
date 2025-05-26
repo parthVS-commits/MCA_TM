@@ -1616,6 +1616,12 @@ def main():
             st.error("Please enter a valid name. The input cannot be just a suffix (like 'private limited', 'ltd', etc.)")
             return
 
+        # Initialize variables that will be used across tabs to avoid UnboundLocalError
+        validation_results = None
+        mca_matches = None
+        trademark_results = None
+        class_number = None
+
         # Create tabs for MCA and Trademark validation results
         mca_tab, trademark_tab, suggestions_tab = st.tabs(["🏢 MCA Validation", "™️ Trademark Validation", "💡 Suggestions"])
         
@@ -1654,7 +1660,7 @@ def main():
                     st.success("🌐 **Web search was triggered** - comprehensive validation performed!")
                 
             # Display MCA validation results
-            if not validation_results['overall_validity']['is_valid']:
+            if validation_results and not validation_results['overall_validity']['is_valid']:
                 st.error("### ⚠️ MCA Validation Issues Found!")
                 for message in validation_results['overall_validity']['validation_messages']:
                     st.warning(f"• {message}")
@@ -1704,63 +1710,64 @@ def main():
                                 source_icon = "🌐" if match.get("Source") in ["Web_Search_Exact", "Web_Search_Similar"] else "💾"
                                 st.write(f"{source_icon} {match['Matching Wordmark']} (Score: {match['Hybrid Score']:.3f})")
             else:
-                if validation_results['overall_validity']['is_valid']:
+                if validation_results and validation_results['overall_validity']['is_valid']:
                     st.success("✅ **MCA Validation Passed!** No issues found with the name.")
                 else:
                     st.info("No similar MCA names found in database or web search, but other validation issues exist.")
                 
             # Display detailed MCA validation report
-            with st.expander("📋 View Detailed MCA Validation Report"):
-                st.write("### Validation Checks Performed:")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.write("**1. Translation Check:**")
-                    if validation_results['translation_check'].get('has_meaning'):
-                        st.write("- ⚠️ Has meaning in other languages")
-                        if validation_results['translation_check'].get('english_meaning'):
-                            st.write(f"- English: {validation_results['translation_check']['english_meaning']}")
-                        if validation_results['translation_check'].get('hindi_meaning'):
-                            st.write(f"- Hindi: {validation_results['translation_check']['hindi_meaning']}")
-                    else:
-                        st.write("- ✅ No significant translations found")
+            if validation_results:
+                with st.expander("📋 View Detailed MCA Validation Report"):
+                    st.write("### Validation Checks Performed:")
                     
-                    st.write("**2. Location Name Check:**")
-                    if validation_results['location_check']['is_location']:
-                        st.write(f"- ❌ Contains location names: {', '.join(validation_results['location_check']['matched_locations'])}")
-                    else:
-                        st.write("- ✅ No problematic location names found")
+                    col1, col2 = st.columns(2)
                     
-                    st.write("**3. Government Terms Check:**")
-                    if validation_results['government_check']['implies_patronage']:
-                        st.write(f"- ❌ Contains restricted terms: {', '.join(validation_results['government_check']['restricted_words_found'])}")
-                    else:
-                        st.write("- ✅ No restricted government terms found")
-                
-                with col2:
-                    st.write("**4. Embassy/Consulate Check:**")
-                    if validation_results['embassy_check']['has_embassy_connection']:
-                        st.write(f"- ❌ Contains embassy-related terms: {', '.join(validation_results['embassy_check']['matched_terms'])}")
-                    else:
-                        st.write("- ✅ No embassy/consulate connections found")
-
-                    st.write("**5. Articles/Pronouns Check:**")
-                    if validation_results['articles_check']['has_articles']:
-                        st.write("- ❌ Contains only articles/pronouns")
-                    else:
-                        st.write("- ✅ No articles/pronouns issues found")
+                    with col1:
+                        st.write("**1. Translation Check:**")
+                        if validation_results['translation_check'].get('has_meaning'):
+                            st.write("- ⚠️ Has meaning in other languages")
+                            if validation_results['translation_check'].get('english_meaning'):
+                                st.write(f"- English: {validation_results['translation_check']['english_meaning']}")
+                            if validation_results['translation_check'].get('hindi_meaning'):
+                                st.write(f"- Hindi: {validation_results['translation_check']['hindi_meaning']}")
+                        else:
+                            st.write("- ✅ No significant translations found")
                         
-                    st.write("**6. Database + Web Search:**")
-                    if mca_matches:
-                        db_count = len([m for m in mca_matches if m.get("Source") == "Database"])
-                        web_count = len([m for m in mca_matches if m.get("Source") in ["Web_Search_Exact", "Web_Search_Similar"]])
-                        st.write(f"- 💾 Database matches: {db_count}")
-                        st.write(f"- 🌐 Web search matches: {web_count}")
-                        if web_count > 0:
-                            st.write("- ✅ Comprehensive web search performed")
-                    else:
-                        st.write("- ✅ No matches found in database or web")
+                        st.write("**2. Location Name Check:**")
+                        if validation_results['location_check']['is_location']:
+                            st.write(f"- ❌ Contains location names: {', '.join(validation_results['location_check']['matched_locations'])}")
+                        else:
+                            st.write("- ✅ No problematic location names found")
+                        
+                        st.write("**3. Government Terms Check:**")
+                        if validation_results['government_check']['implies_patronage']:
+                            st.write(f"- ❌ Contains restricted terms: {', '.join(validation_results['government_check']['restricted_words_found'])}")
+                        else:
+                            st.write("- ✅ No restricted government terms found")
+                    
+                    with col2:
+                        st.write("**4. Embassy/Consulate Check:**")
+                        if validation_results['embassy_check']['has_embassy_connection']:
+                            st.write(f"- ❌ Contains embassy-related terms: {', '.join(validation_results['embassy_check']['matched_terms'])}")
+                        else:
+                            st.write("- ✅ No embassy/consulate connections found")
+
+                        st.write("**5. Articles/Pronouns Check:**")
+                        if validation_results['articles_check']['has_articles']:
+                            st.write("- ❌ Contains only articles/pronouns")
+                        else:
+                            st.write("- ✅ No articles/pronouns issues found")
+                            
+                        st.write("**6. Database + Web Search:**")
+                        if mca_matches:
+                            db_count = len([m for m in mca_matches if m.get("Source") == "Database"])
+                            web_count = len([m for m in mca_matches if m.get("Source") in ["Web_Search_Exact", "Web_Search_Similar"]])
+                            st.write(f"- 💾 Database matches: {db_count}")
+                            st.write(f"- 🌐 Web search matches: {web_count}")
+                            if web_count > 0:
+                                st.write("- ✅ Comprehensive web search performed")
+                        else:
+                            st.write("- ✅ No matches found in database or web")
                 
         with trademark_tab:
             st.header("™️ Trademark Validation")
@@ -1826,23 +1833,26 @@ def main():
             need_suggestions = False
             suggestion_reasons = []
             
-            # Check MCA validation results
-            mca_has_conflicts = not validation_results['overall_validity']['is_valid']
-            if mca_has_conflicts:
-                need_suggestions = True
-                suggestion_reasons.append("MCA validation issues found")
-                
-            # Check for high-risk MCA matches
+            # Check MCA validation results (only if validation_results exists)
+            mca_has_conflicts = False
+            if validation_results:
+                mca_has_conflicts = not validation_results['overall_validity']['is_valid']
+                if mca_has_conflicts:
+                    need_suggestions = True
+                    suggestion_reasons.append("MCA validation issues found")
+                    
+            # Check for high-risk MCA matches (only if mca_matches exists)
+            high_risk_mca = []
             if mca_matches:
                 high_risk_mca = [m for m in mca_matches if m["Hybrid Score"] > 0.8 or m["Phonetic Score"] > 0.85]
                 if high_risk_mca:
                     need_suggestions = True
                     suggestion_reasons.append(f"Found {len(high_risk_mca)} high-risk MCA matches")
             
-            # Check trademark validation results (if objective was provided)
+            # Check trademark validation results (only if all required variables exist)
             trademark_has_conflicts = False
             if objective and class_number and trademark_results:
-                if trademark_results['suggestions_needed']:
+                if trademark_results.get('suggestions_needed'):
                     need_suggestions = True
                     trademark_has_conflicts = True
                     suggestion_reasons.append("High-risk trademark matches found")
@@ -1850,7 +1860,7 @@ def main():
             if need_suggestions:
                 st.warning(f"**Suggestions needed due to:** {', '.join(suggestion_reasons)}")
                 
-                with st.spinner("Generating conflict-aware alternative name suggestions..."):
+                with st.spinner("Generating and validating alternative name suggestions..."):
                     # Gather conflict information for smart suggestions
                     all_mca_risk_matches = []
                     if mca_matches:
@@ -1863,7 +1873,7 @@ def main():
                         "trademark_class": class_number if class_number else None
                     }
                     
-                    # Generate smart suggestions that avoid conflicts
+                    # Generate balanced and validated suggestions
                     smart_suggestions = generate_validation_safe_suggestions(cleaned_name, conflict_info)
 
                     if smart_suggestions:
@@ -1897,7 +1907,7 @@ def main():
                                             st.warning("⚠️ Some validation issues found:")
                                             for msg in quick_validation['overall_validity']['validation_messages']:
                                                 st.write(f"• {msg}")
-                                
+                        
                         # Add note about further validation
                         st.info("""
                         💡 **Next Steps:** 
@@ -1920,19 +1930,38 @@ def main():
                             if conflict_info.get("mca_conflicts"):
                                 conflicting_names = [m.get("Matching Wordmark", "") for m in conflict_info["mca_conflicts"][:3]]
                                 st.write(f"**Avoid similarity to:** {', '.join(conflicting_names)}")
-                            
+                        
             else:
                 st.success("✅ **No suggestions needed - current name appears to be valid!**")
                 st.balloons()
                 
                 # Show summary of why it's valid
                 st.info("**Validation Summary:**")
-                if validation_results['overall_validity']['is_valid']:
+                if validation_results and validation_results['overall_validity']['is_valid']:
                     st.write("• ✅ Passed all MCA validation checks")
                 if not mca_matches or not any(m["Hybrid Score"] > 0.8 for m in mca_matches):
                     st.write("• ✅ No high-risk MCA database or web matches")
                 if not trademark_has_conflicts:
                     st.write("• ✅ No high-risk trademark conflicts found")
+                    
+                # Optional: Offer suggestions anyway
+                if st.button("💡 Generate suggestions anyway (for comparison)"):
+                    st.info("Generating alternative suggestions for comparison...")
+                    
+                    conflict_info = {
+                        "mca_conflicts": [],
+                        "trademark_conflicts": [],
+                        "original_name": cleaned_name,
+                        "trademark_class": class_number if class_number else None
+                    }
+                    
+                    comparison_suggestions = generate_validation_safe_suggestions(cleaned_name, conflict_info)
+                    
+                    if comparison_suggestions:
+                        st.write("**Alternative options to consider:**")
+                        for i, suggestion in enumerate(comparison_suggestions, 1):
+                            st.write(f"**{i}.** {suggestion}")
+                        st.info("These are just alternatives - your original name is already valid!")
 
     # Add footer with information
     st.markdown("---")
@@ -1955,6 +1984,6 @@ def main():
     - 🚫 Avoids known problematic words/patterns
     - 🎨 Maintains business context and essence
     """)
-
+    
 if __name__ == "__main__":
     main()
